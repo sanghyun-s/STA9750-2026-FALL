@@ -1,0 +1,16 @@
+---
+title: "Sanghyun Seong - STA 9750"
+---
+
+I am a Master's student at Baruch College studying Business Analytics.
+
+This website contains my coursework and mini-projects for STA 9750.
+
+```{r}
+#| include: false
+1+1
+```
+
+---
+
+Last Updated: `r format(Sys.time(), "%A %m %d, %Y at %H:%M%p")`
