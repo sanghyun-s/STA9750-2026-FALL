@@ -10,6 +10,17 @@ website:
   navbar:
     background: primary
     search: false
+    left:
+      - href: index.qmd
+        text: Home
+      - href: mp01.qmd
+        text: "Mini-Project #01"
+      - href: mp02.qmd
+        text: "Mini-Project #02"
+      - href: mp03.qmd
+        text: "Mini-Project #03"
+      - href: mp04.qmd
+        text: "Mini-Project #04"
 
 format:
   html:

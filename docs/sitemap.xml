@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://sanghyun-s.github.io/STA9750-2026-FALL/index.html</loc>
-    <lastmod>2026-09-25T21:16:28.852Z</lastmod>
-  </url>
-  <url>
     <loc>https://sanghyun-s.github.io/STA9750-2026-FALL/mp01.html</loc>
     <lastmod>2026-09-25T21:25:09.767Z</lastmod>
-  </url>
-  <url>
-    <loc>https://sanghyun-s.github.io/STA9750-2026-FALL/mp02.html</loc>
-    <lastmod>2026-09-25T21:25:11.763Z</lastmod>
   </url>
   <url>
     <loc>https://sanghyun-s.github.io/STA9750-2026-FALL/mp03.html</loc>
     <lastmod>2026-09-25T21:25:12.827Z</lastmod>
   </url>
   <url>
+    <loc>https://sanghyun-s.github.io/STA9750-2026-FALL/index.html</loc>
+    <lastmod>2026-09-29T05:56:28.618Z</lastmod>
+  </url>
+  <url>
     <loc>https://sanghyun-s.github.io/STA9750-2026-FALL/mp04.html</loc>
     <lastmod>2026-09-25T21:25:13.913Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sanghyun-s.github.io/STA9750-2026-FALL/mp02.html</loc>
+    <lastmod>2026-09-25T21:25:11.763Z</lastmod>
   </url>
 </urlset>
