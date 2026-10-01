@@ -8,9 +8,25 @@ I work in R and Python — this semester that's meant Quarto reporting and dplyr
 
 This site collects my coursework and mini-projects for STA 9750.
 
-```{r}
-#| include: false
-1+1
+```{r baruch-map}
+#| echo: false
+#| message: false
+#| warning: false
+
+if(!require("leaflet")){
+    options(repos = c(CRAN = "https://cloud.r-project.org"))
+    install.packages("leaflet")
+    stopifnot(require("leaflet"))
+}
+
+baruch_longitude <- -73.98333
+baruch_latitude  <- +40.74028
+
+leaflet() |>
+  addTiles() |>
+  setView(baruch_longitude, baruch_latitude, zoom = 17) |>
+  addPopups(baruch_longitude, baruch_latitude,
+            "M.S. in Business Analytics at <b>Baruch College</b>")
 ```
 
 ---
