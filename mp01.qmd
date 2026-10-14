@@ -1,7 +1,295 @@
-
 ---
-title: "Mini-Project Placeholder"
+title: "[WRITE: your title here]"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
+    toc: true
 ---
 
-This is a placeholder for STA9750 Mini-Project 1. Check back soon for more!
+> **[WRITE: Introduction.** A few paragraphs setting up what the Netflix "What We Watched"
+> reports are, why they exist, and what question this report sets out to answer. Delete this
+> blockquote when you replace it.**]**
 
+## Data Acquisition
+
+> **[WRITE: one or two sentences introducing where this data comes from and what the code below
+> does. Don't just drop the code block in cold.]**
+
+```{r}
+#| label: load-netflix-data
+#| message: false
+#| warning: false
+
+#' Acquire Netflix What We Watched Reports
+#'
+#' Downloads and standardizes the seven "What We Watched" reports (2023H1-2026H1).
+#' Files are cached in data/mp01 so re-runs do not re-download.
+load_netflix_data <- function(){
+  library(tidyverse)
+  library(rvest)
+  library(readxl)
+  library(fs)
+
+  data_dir <- path("data", "mp01")
+
+  if(!dir_exists(data_dir)){
+    dir_create(data_dir, recurse = TRUE)
+  }
+
+  NETFLIX_URLS <- list(
+    `2023H1` = "https://about.netflix.com/news/what-we-watched-a-netflix-engagement-report",
+    `2023H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2023",
+    `2024H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2024",
+    `2024H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2024",
+    `2025H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2025",
+    `2025H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2025",
+    `2026H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2026"
+  )
+
+  download_if_needed <- function(url, local){
+    if(!file_exists(local)){
+      download.file(url, local, quiet = TRUE, mode = "wb")
+    }
+    return(local)
+  }
+
+  NETFLIX_URLS |>
+    map(read_html) |>
+    map(html_element, xpath = "//a[contains(@href, '.xlsx')]") |>
+    map_chr(html_attr, "href") |>
+    enframe("period", "url") |>
+    mutate(path = path(data_dir, paste0(period, ".xlsx")),
+           path = map2(url, path, download_if_needed),
+           data = map(path, read_excel, skip = 3, na = "*"),
+           data = map(data, \(x) x |> mutate(`Release Date` = as.Date(`Release Date`)))) |>
+    unnest(data) |>
+    select(-url, -path) |>
+    mutate(year = str_sub(period, 1, 4),
+           half = str_sub(period, start = 6),
+           period_start = make_date(year, if_else(half == 1, 1, 7), 1),
+           period_end   = make_date(year, if_else(half == 1, 6, 12), if_else(half == 1, 30, 31))) |>
+    filter(!is.na(`Hours Viewed`)) |>
+    mutate(live_event = !is.na(Runtime) & str_detect(Runtime, "\\d+:\\d+\\*"),
+           clean_time = str_remove(Runtime, fixed("*")),
+           Runtime    = 60 * hour(hm(clean_time)) + minute(hm(clean_time))) |>
+    select(-clean_time) |>
+    mutate(Runtime = coalesce(Runtime, mean(Runtime, na.rm = TRUE)),
+           .by     = Title,
+           Title   = stringi::stri_trans_general(Title, "Latin-ASCII"),
+           Title   = str_remove(Title, " // .*"),
+           Title   = str_remove(Title, "[^[:ascii:]].*"),
+           Title   = str_trim(Title)) |>
+    filter_out(Title == "") |>
+    select(year,
+           period,
+           period_start,
+           period_end,
+           Title,
+           -half,
+           Runtime,
+           Views,
+           `Hours Viewed`,
+           `Release Date`,
+           `Available Globally?`,
+           live_event) |>
+    # Task 2: tidy column names
+    rename(title              = Title,
+           runtime            = Runtime,
+           views              = Views,
+           hours_viewed       = `Hours Viewed`,
+           release_date       = `Release Date`,
+           available_globally = `Available Globally?`) |>
+    # Task 3: correct column types
+    mutate(year               = as.integer(year),
+           available_globally = available_globally == "Yes")
+}
+
+NETFLIX_DATA <- load_netflix_data()
+```
+
+## Initial Data Exploration
+
+> **[WRITE: a sentence introducing why you check structure and types before analysing anything.]**
+
+```{r}
+#| label: eda-checks
+#| message: false
+#| warning: false
+
+library(skimr)
+library(scales)
+library(gt)
+
+glimpse(NETFLIX_DATA)
+```
+
+```{r}
+#| label: eda-skim
+
+skim(NETFLIX_DATA)
+```
+
+```{r}
+#| label: eda-sample
+
+NETFLIX_DATA |> slice_sample(n = 10)
+```
+
+```{r}
+#| label: eda-probes
+
+# Where are the missing views concentrated?
+NETFLIX_DATA |> summarize(n_missing_views = sum(is.na(views)), n = n(), .by = period)
+
+# How many runtimes were imputed rather than observed?
+NETFLIX_DATA |> summarize(runtime_na  = sum(is.na(runtime)),
+                          runtime_nan = sum(is.nan(runtime)))
+
+# How coarse is hours_viewed?
+NETFLIX_DATA |> count(rounded_to_100k = hours_viewed %% 100000 == 0)
+
+# How often is release_date missing?
+NETFLIX_DATA |> summarize(missing_release_date = sum(is.na(release_date)))
+```
+
+> **[WRITE: your description of what these checks show.** This is Task 4's actual deliverable —
+> the code and output alone are not enough. Cover at minimum: the dimensions and column types;
+> where `views` is missing and why that is structural rather than random; the fact that some
+> runtimes are imputed by the cleaning code; and the rounding in `hours_viewed`.**]**
+
+## Exploratory Questions: Inline Values
+
+> **[WRITE: a sentence introducing this section.]**
+
+### Date range covered
+
+```{r}
+#| label: q5-1
+
+```
+
+> **[WRITE: answer in a complete sentence using inline code. Do not type the numbers in.]**
+
+### Number of distinct titles
+
+```{r}
+#| label: q5-2
+
+```
+
+> **[WRITE: answer, and note that seasons are counted separately.]**
+
+### Hours watched across the Bridgerton universe
+
+```{r}
+#| label: q5-3
+
+```
+
+> **[WRITE: answer.]**
+
+### Hours watched across the five seasons of Stranger Things
+
+```{r}
+#| label: q5-4
+
+```
+
+> **[WRITE: answer, and explain which companion titles you excluded and why.]**
+
+### Share of watch time captured by the Top 10 titles of 2026H1
+
+```{r}
+#| label: q5-5
+
+```
+
+> **[WRITE: answer.]**
+
+### Fraction of the catalog available globally
+
+```{r}
+#| label: q5-6
+
+```
+
+> **[WRITE: answer both by title count and weighted by hours viewed, and comment on the gap
+> between the two.]**
+
+## Exploratory Questions: Tables
+
+> **[WRITE: a sentence introducing this section.]**
+
+### Top title in each period
+
+```{r}
+#| label: q6-1
+
+```
+
+> **[WRITE: what the table shows.]**
+
+### How the catalog has changed in size
+
+```{r}
+#| label: q6-2
+
+```
+
+> **[WRITE: what the table shows — both title count and total runtime.]**
+
+### The most consistent performers
+
+```{r}
+#| label: q6-3
+
+```
+
+> **[WRITE: what the table shows, and state the rule you used to define "consistent".]**
+
+### Shows versus movies
+
+```{r}
+#| label: q6-4
+
+```
+
+> **[WRITE: define the heuristic you chose for separating shows from movies, justify it, and
+> state its limitations. This is the question with the most room for judgement.]**
+
+### Live events versus pre-taped content
+
+```{r}
+#| label: q6-5
+
+```
+
+> **[WRITE: what the table shows, comparing both averages and top performers.]**
+
+## Strategy Memo
+
+> **[WRITE: the memo.** No more than 750 words, addressed to Netflix leadership, advising on 2027
+> original content strategy. Must cover at least two of: global vs regional availability, TV vs
+> film, big hits vs the long tail, short vs long content, burstiness of viewership, trends over
+> time.
+>
+> Every number must arrive through inline code, not typed by hand. Hard-coded values are
+> penalised.
+>
+> Supporting calculations go in the chunk below, not in the memo text.**]**
+
+```{r}
+#| label: memo-calculations
+#| code-fold: true
+
+# Calculations supporting the memo. Keep them here; reference the results
+# in the text above with inline code.
+
+```
+
+::: {.callout-note title="AI Usage Statement" collapse="true"}
+**[WRITE: your AI usage statement.** One paragraph describing honestly how you used generative AI
+on this mini-project. Recall the course policy: AI may not be used to write or edit non-code text.
+Omitting this section is an automatic 25% penalty.**]**
+:::
