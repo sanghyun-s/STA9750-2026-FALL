@@ -1,5 +1,5 @@
 ---
-title: "[WRITE: your title here]"
+title: "Mini-Project #1: Exploring Netflix viewing data"
 format:
   html:
     code-fold: true
@@ -7,24 +7,18 @@ format:
     toc: true
 ---
 
-> **[WRITE: Introduction.** A few paragraphs setting up what the Netflix "What We Watched"
-> reports are, why they exist, and what question this report sets out to answer. Delete this
-> blockquote when you replace it.**]**
+> ** Based on Netflix’s semi-annual "What We Watched" data, this mini-project explores which types of programming capture the majority of the platform's watch time. The analysis examines inline values, extraordinary viewership outliers, and their associated statistical variables.
+The final output will be a corporate strategy memo addressed to Netflix’s content leadership analyzing the contrast between major blockbusters and the long tail of smaller titles. Specifically, the memo will examine the variation of viewership by using period-end and release-date columns to calculate a days_available metric, examining whether titles released near the end of a reporting period show higher viewing intensity despite a shorter availability window.**
 
 ## Data Acquisition
 
-> **[WRITE: one or two sentences introducing where this data comes from and what the code below
-> does. Don't just drop the code block in cold.]**
+> ** Data acquisition is based on Netflix’s "What We Watched" reports spanning 2023 H1 through 2026 H1. The Quarto (.qmd) file automatically executes the load_Netflix_data function, ensuring the latest datasets are loaded without requiring manual downloads or re-runs. **
 
 ```{r}
 #| label: load-netflix-data
 #| message: false
 #| warning: false
 
-#' Acquire Netflix What We Watched Reports
-#'
-#' Downloads and standardizes the seven "What We Watched" reports (2023H1-2026H1).
-#' Files are cached in data/mp01 so re-runs do not re-download.
 load_netflix_data <- function(){
   library(tidyverse)
   library(rvest)
@@ -110,162 +104,472 @@ NETFLIX_DATA <- load_netflix_data()
 
 ## Initial Data Exploration
 
-> **[WRITE: a sentence introducing why you check structure and types before analysing anything.]**
+> ** By examining the dataset’s structure, we can get a clear picture of Netflix’s viewing patterns over 3.5 years. The categorical and date variables (`chr`, `date`, and `int`) identify each of the 61,892 observations and place them on an exact timeline. The numerical variables (`dbl`) measure total watch hours, while runtime and release dates provide additional context for evaluating viewer engagement over time. Finally, the logical variables (`lgl`) help distinguish between live broadcasts and global releases, making it easier to analyze different segments of Netflix’s content library. **
+
+
+## Exploratory Data Analysis Pass - Data Summaries, Missing Variables, and Distribution
 
 ```{r}
-#| label: eda-checks
+#| label: eda-glimpse
 #| message: false
 #| warning: false
+#| code-fold: false
 
 library(skimr)
-library(scales)
-library(gt)
 
 glimpse(NETFLIX_DATA)
+
 ```
 
 ```{r}
 #| label: eda-skim
+#| code-fold: false
 
 skim(NETFLIX_DATA)
 ```
 
 ```{r}
-#| label: eda-sample
+#| label: eda-missing-views
+#| code-fold: false
 
-NETFLIX_DATA |> slice_sample(n = 10)
+NETFLIX_DATA |>
+  summarize(
+    rows = n(),
+    missing_views = sum(is.na(views)),
+    .by = period
+  )
 ```
 
 ```{r}
-#| label: eda-probes
+#| label: eda-sample
+#| code-fold: true
+#| code-summary: "Show random sample"
 
-# Where are the missing views concentrated?
-NETFLIX_DATA |> summarize(n_missing_views = sum(is.na(views)), n = n(), .by = period)
-
-# How many runtimes were imputed rather than observed?
-NETFLIX_DATA |> summarize(runtime_na  = sum(is.na(runtime)),
-                          runtime_nan = sum(is.nan(runtime)))
-
-# How coarse is hours_viewed?
-NETFLIX_DATA |> count(rounded_to_100k = hours_viewed %% 100000 == 0)
-
-# How often is release_date missing?
-NETFLIX_DATA |> summarize(missing_release_date = sum(is.na(release_date)))
+NETFLIX_DATA |>
+  slice_sample(n = 10)
 ```
 
-> **[WRITE: your description of what these checks show.** This is Task 4's actual deliverable —
-> the code and output alone are not enough. Cover at minimum: the dimensions and column types;
-> where `views` is missing and why that is structural rather than random; the fact that some
-> runtimes are imputed by the cleaning code; and the rounding in `hours_viewed`.**]**
+> ** The NETFLIX_DATA dataset consists of 61,892 observations across 11 columns, spanning seven semiannual periods from 2023 H1 to 2026 H1.
+
+> ** Missing data in `views` is heavily concentrated within the 2023 H1 period: 18,196 out of the 18,198 missing values. In addition, release_date lacks 35,251 entries and runtime includes 13,085 missing records. 
+
+> ** Conversely, `hours_viewed` is 100% complete with a highly right-skewed distribution, ranging from a median of 1.8 million hours to a maximum of 964.1 million hours. **
+
 
 ## Exploratory Questions: Inline Values
-
-> **[WRITE: a sentence introducing this section.]**
 
 ### Date range covered
 
 ```{r}
 #| label: q5-1
 
+q1_start <- min(NETFLIX_DATA$period_start)
+q1_end   <- max(NETFLIX_DATA$period_end)
+
 ```
 
-> **[WRITE: answer in a complete sentence using inline code. Do not type the numbers in.]**
+> ** The code shows the date range covered by the dataset lies between `r format(q1_start, "%Y-%m-%d")` and `r format(q1_end, "%Y-%m-%d")`. **
 
 ### Number of distinct titles
 
 ```{r}
 #| label: q5-2
 
+q2_n_titles <- n_distinct(NETFLIX_DATA$title)
+
 ```
 
-> **[WRITE: answer, and note that seasons are counted separately.]**
+> ** The count of distinct strings based on cleaned title fields (strings) equals to `r scales::comma(q2_n_titles)`, connecting to all uniquely named content on the platform.**
 
 ### Hours watched across the Bridgerton universe
 
 ```{r}
 #| label: q5-3
 
+q3_bridgerton_hours <- NETFLIX_DATA |>
+  filter(
+    str_detect(title, regex("bridgerton", ignore_case = TRUE))
+  ) |>
+  filter_out(
+    str_detect(title, regex("Fireplace", ignore_case = TRUE))
+  ) |>
+  filter_out(
+    str_detect(title, regex("Afterparty", ignore_case = TRUE))
+  ) |>
+  summarize(hours = sum(hours_viewed)) |>
+  pull(hours)
+
 ```
 
-> **[WRITE: answer.]**
+> ** The hours of people watched the shows of the Bridgerton universe (includes Seasons 1-4 and Queen Charlotte)  equals to `r scales::comma(q3_bridgerton_hours)` hours. **
 
 ### Hours watched across the five seasons of Stranger Things
 
 ```{r}
 #| label: q5-4
 
+q4_stranger_hours <- NETFLIX_DATA |>
+  filter(
+    str_detect(title, regex("Stranger Things", ignore_case = TRUE))
+  ) |>
+  filter_out(
+    str_detect(title, regex("Beyond", ignore_case = TRUE))
+  ) |>
+  filter_out(
+    str_detect(title, regex("Tales from", ignore_case = TRUE))
+  ) |>
+  filter_out(
+    str_detect(title, regex("Fireplace", ignore_case = TRUE))
+  ) |>
+  summarize(hours = sum(hours_viewed)) |>
+  pull(hours)
+
 ```
 
-> **[WRITE: answer, and explain which companion titles you excluded and why.]**
+> ** The hours audience watched the Stranger Things Main series (Seasons 1-5, excluding spinoffs) equals to `r scales::comma(q4_stranger_hours)` hours. **
 
 ### Share of watch time captured by the Top 10 titles of 2026H1
 
 ```{r}
 #| label: q5-5
 
+q5_total_hours <- NETFLIX_DATA |>
+  filter(period == "2026H1") |>
+  summarize(hours = sum(hours_viewed)) |>
+  pull(hours)
+
+q5_top10_hours <- NETFLIX_DATA |>
+  filter(
+    period == "2026H1",
+    title != "Other Shows"
+  ) |>
+  slice_max(
+    hours_viewed,
+    n = 10,
+    with_ties = FALSE
+  ) |>
+  summarize(hours = sum(hours_viewed)) |>
+  pull(hours)
+
+q5_share <- q5_top10_hours / q5_total_hours
+
 ```
 
-> **[WRITE: answer.]**
+> ** The first half of 2026 top 10 share is `r scales::percent(q5_share, accuracy = 0.1)`. This shows the proportion of top 10 titles captured  all platform hours in 2026 H1, excluding the aggregated "Other Shows" category. **
 
 ### Fraction of the catalog available globally
 
 ```{r}
 #| label: q5-6
 
+q6_known <- NETFLIX_DATA |>
+  filter(!is.na(available_globally))
+
+q6_by_record_count <- q6_known |>
+  summarize(
+    share = mean(available_globally)
+  ) |>
+  pull(share)
+
+q6_by_hours <- q6_known |>
+  summarize(
+    share = weighted.mean(
+      available_globally,
+      w = hours_viewed
+    )
+  ) |>
+  pull(share)
+
 ```
 
-> **[WRITE: answer both by title count and weighted by hours viewed, and comment on the gap
-> between the two.]**
+> ** Among catalog records with known availability status, `r scales::percent(q6_by_record_count, accuracy = 0.1)` are globally available, while globally available content accounts for `r scales::percent(q6_by_hours, accuracy = 0.1)` of total watch hours. The difference indicates that globally available content generates a disproportionately higher share of viewing relative to its share of catalog records. **
 
 ## Exploratory Questions: Tables
-
-> **[WRITE: a sentence introducing this section.]**
 
 ### Top title in each period
 
 ```{r}
 #| label: q6-1
 
+library(gt)
+
+q6_1_period_totals <- NETFLIX_DATA |>
+  summarize(
+    period_total_hours = sum(hours_viewed),
+    .by = period
+  )
+
+q6_1_title_hours <- NETFLIX_DATA |>
+  filter(
+    !str_detect(
+      title,
+      regex("^Other (Shows|Films)$", ignore_case = TRUE)
+    )
+  ) |>
+  summarize(
+    title_hours = sum(hours_viewed),
+    .by = c(period, title)
+  )
+
+q6_1 <- q6_1_title_hours |>
+  left_join(q6_1_period_totals, by = "period") |>
+  mutate(
+    share_of_period = title_hours / period_total_hours
+  ) |>
+  group_by(period) |>
+  slice_max(
+    order_by = title_hours,
+    n = 1,
+    with_ties = FALSE
+  ) |>
+  ungroup() |>
+  arrange(period)
+
+q6_1 |>
+  select(
+    Period = period,
+    `Top Title` = title,
+    `Hours Viewed` = title_hours,
+    `Share of Period` = share_of_period
+  ) |>
+  gt() |>
+  fmt_number(
+    columns = `Hours Viewed`,
+    decimals = 0,
+    use_seps = TRUE
+  ) |>
+  fmt_percent(
+    columns = `Share of Period`,
+    decimals = 1
+  )
+
 ```
 
-> **[WRITE: what the table shows.]**
+> ** Individually, these major releases accounted for between `r scales::percent(min(q6_1$share_of_period), accuracy = 0.1)` and `r scales::percent(max(q6_1$share_of_period), accuracy = 0.1)` of total platform watch hours during their respective periods. **
 
 ### How the catalog has changed in size
 
 ```{r}
 #| label: q6-2
 
+q6_2 <- NETFLIX_DATA |>
+  summarize(
+    title_count = n_distinct(title),
+    total_runtime_hours = sum(runtime, na.rm = TRUE) / 60,
+    missing_runtime = sum(is.na(runtime)),
+    .by = period
+  ) |>
+  arrange(period)
+
+q6_2 |>
+  select(
+    Period = period,
+    `Distinct Titles` = title_count,
+    `Total Runtime (Hours)` = total_runtime_hours,
+    `Missing Runtime Records` = missing_runtime
+  ) |>
+  gt() |>
+  tab_header(
+    title = "Netflix Catalog Size by Reporting Period"
+  ) |>
+  fmt_number(
+    columns = c(
+      `Distinct Titles`,
+      `Total Runtime (Hours)`,
+      `Missing Runtime Records`
+    ),
+    decimals = 0,
+    use_seps = TRUE
+  )
+
 ```
 
-> **[WRITE: what the table shows — both title count and total runtime.]**
+> ** The number of distinct available titles increased from `r scales::comma(q6_2$title_count[q6_2$period == "2023H2"])` to `r scales::comma(q6_2$title_count[q6_2$period == "2026H1"])`, while the known catalog runtime grew from `r scales::comma(round(q6_2$total_runtime_hours[q6_2$period == "2023H2"]))` hours to `r scales::comma(round(q6_2$total_runtime_hours[q6_2$period == "2026H1"]))` hours. **
 
 ### The most consistent performers
 
 ```{r}
 #| label: q6-3
 
+q6_3_period_count <- n_distinct(NETFLIX_DATA$period)
+
+q6_3_title_period <- NETFLIX_DATA |>
+  filter(
+    !str_detect(
+      title,
+      regex("^Other (Shows|Films)$", ignore_case = TRUE)
+    )
+  ) |>
+  summarize(
+    period_hours = sum(hours_viewed),
+    .by = c(title, period)
+  )
+
+q6_3 <- q6_3_title_period |>
+  summarize(
+    periods_present = n_distinct(period),
+    avg_hours = mean(period_hours),
+    min_hours = min(period_hours),
+    sd_hours = sd(period_hours),
+    .by = title
+  ) |>
+  filter(
+    periods_present == q6_3_period_count
+  ) |>
+  arrange(
+    desc(min_hours),
+    sd_hours
+  ) |>
+  slice_head(n = 10)
+
+q6_3 |>
+  select(
+    Title = title,
+    `Periods Present` = periods_present,
+    `Average Hours` = avg_hours,
+    `Minimum Hours` = min_hours,
+    `SD of Hours` = sd_hours
+  ) |>
+  gt() |>
+  tab_header(
+    title = "Most Consistently High-Viewership Titles"
+  ) |>
+  fmt_number(
+    columns = c(
+      `Average Hours`,
+      `Minimum Hours`,
+      `SD of Hours`
+    ),
+    decimals = 0,
+    use_seps = TRUE
+  )
+
 ```
 
-> **[WRITE: what the table shows, and state the rule you used to define "consistent".]**
+> ** Top evergreen titles satisfying this rule, for all `r q6_3_period_count` reporting periods, include Pablo Escobar, el patron del mal Season 1, Chiquititas (2013), Stranger Things 4, Suits Seasons 1 and 2, Breaking Bad Seasons 2, 3, and 5, Sam & Cat: Season 1, and Money Heist: Part 1. **
 
 ### Shows versus movies
 
 ```{r}
 #| label: q6-4
 
+q6_4 <- NETFLIX_DATA |>
+  mutate(
+    content_type = case_when(
+      str_detect(
+        title,
+        regex("Season|Limited Series", ignore_case = TRUE)
+      ) ~ "Show",
+      !is.na(runtime) & runtime > 240 ~ "Show",
+      is.na(runtime) ~ "Unknown",
+      TRUE ~ "Movie"
+    )
+  ) |>
+  summarize(
+    hours_viewed = sum(hours_viewed),
+    .by = c(period, content_type)
+  ) |>
+  mutate(
+    share_of_watch_time = hours_viewed / sum(hours_viewed),
+    .by = period
+  ) |>
+  arrange(period, desc(share_of_watch_time))
+
+q6_4 |>
+  select(
+    Period = period,
+    `Content Type` = content_type,
+    `Hours Viewed` = hours_viewed,
+    `Share of Watch Time` = share_of_watch_time
+  ) |>
+  gt() |>
+  fmt_number(
+    columns = `Hours Viewed`,
+    decimals = 0,
+    use_seps = TRUE
+  ) |>
+  fmt_percent(
+    columns = `Share of Watch Time`,
+    decimals = 1
+  )
+
 ```
 
-> **[WRITE: define the heuristic you chose for separating shows from movies, justify it, and
-> state its limitations. This is the question with the most room for judgement.]**
+> ** The unknown category of 2023 H1 accounts for `r scales::percent(q6_4$share_of_watch_time[q6_4$period == "2023H1" & q6_4$content_type == "Unknown"], accuracy = 0.1)`. The Show-type content consistently accounts for approximately `r scales::percent(min(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Show"]), accuracy = 0.1)` to `r scales::percent(max(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Show"]), accuracy = 0.1)`. Movies account for approximately `r scales::percent(min(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Movie"]), accuracy = 0.1)` to `r scales::percent(max(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Movie"]), accuracy = 0.1)`, excluding the period 2023 H1.**
 
 ### Live events versus pre-taped content
 
 ```{r}
 #| label: q6-5
 
+q6_5_title_period <- NETFLIX_DATA |>
+  filter(
+    !str_detect(
+      title,
+      regex("^Other (Shows|Films)$", ignore_case = TRUE)
+    )
+  ) |>
+  summarize(
+    hours_viewed = sum(hours_viewed),
+    .by = c(period, title, live_event)
+  )
+
+q6_5_average <- q6_5_title_period |>
+  summarize(
+    observations = n(),
+    average_hours = mean(hours_viewed),
+    .by = live_event
+  )
+
+q6_5_top <- q6_5_title_period |>
+  group_by(live_event) |>
+  slice_max(
+    order_by = hours_viewed,
+    n = 1,
+    with_ties = FALSE
+  ) |>
+  ungroup() |>
+  select(
+    live_event,
+    top_title = title,
+    top_title_hours = hours_viewed
+  )
+
+q6_5 <- q6_5_average |>
+  left_join(q6_5_top, by = "live_event") |>
+  mutate(
+    content_type = if_else(
+      live_event,
+      "Live Event",
+      "Pre-Taped"
+    )
+  )
+
+q6_5 |>
+  select(
+    `Content Type` = content_type,
+    `Title-Period Observations` = observations,
+    `Average Hours Viewed` = average_hours,
+    `Top Performer` = top_title,
+    `Top Performer Hours` = top_title_hours
+  ) |>
+  gt() |>
+  tab_header(
+    title = "Live Events vs Pre-Taped Content"
+  ) |>
+  fmt_number(
+    columns = c(
+      `Title-Period Observations`,
+      `Average Hours Viewed`,
+      `Top Performer Hours`
+    ),
+    decimals = 0,
+    use_seps = TRUE
+  )
+
 ```
 
-> **[WRITE: what the table shows, comparing both averages and top performers.]**
+> ** Pre-taped content recorded a higher average watch time than live events, and its top performer also substantially exceeded the top live event. The pre-taped average is `r scales::comma(round(q6_5$average_hours[q6_5$content_type == "Pre-Taped"]))`, while live event average is `r scales::comma(round(q6_5$average_hours[q6_5$content_type == "Live Event"]))`. The pre-taped maximum is `r scales::comma(round(q6_5$top_title_hours[q6_5$content_type == "Pre-Taped"]))`, and `r scales::comma(round(q6_5$top_title_hours[q6_5$content_type == "Live Event"]))` is the live event maximum. **
 
 ## Strategy Memo
 
