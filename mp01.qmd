@@ -7,12 +7,15 @@ format:
     toc: true
 ---
 
-> ** Based on Netflix’s semi-annual "What We Watched" data, this mini-project explores which types of programming capture the majority of the platform's watch time. The analysis examines inline values, extraordinary viewership outliers, and their associated statistical variables.
-The final output will be a corporate strategy memo addressed to Netflix’s content leadership analyzing the contrast between major blockbusters and the long tail of smaller titles. Specifically, the memo will examine the variation of viewership by using period-end and release-date columns to calculate a days_available metric, examining whether titles released near the end of a reporting period show higher viewing intensity despite a shorter availability window.**
+> Based on Netflix’s semi-annual "What We Watched" data, this mini-project explores which types of programming capture the majority of the platform's watch time.
+> 
+> The analysis examines inline values, extraordinary viewership outliers, and their associated statistical variables.
+> 
+> The final output will be a corporate strategy memo that analyzes the contrast between major blockbusters and the long tail of smaller titles, while comparing the titles' global and regional availability, thereby addressing Netflix’s content leadership.
 
 ## Data Acquisition
 
-> ** Data acquisition is based on Netflix’s "What We Watched" reports spanning 2023 H1 through 2026 H1. The Quarto (.qmd) file automatically executes the load_Netflix_data function, ensuring the latest datasets are loaded without requiring manual downloads or re-runs. **
+> Data acquisition is based on Netflix’s "What We Watched" reports spanning 2023 H1 through 2026 H1. The Quarto (.qmd) file automatically executes the load_Netflix_data function, ensuring the latest datasets are loaded without requiring manual downloads or re-runs.
 
 ```{r}
 #| label: load-netflix-data
@@ -104,7 +107,11 @@ NETFLIX_DATA <- load_netflix_data()
 
 ## Initial Data Exploration
 
-> ** By examining the dataset’s structure, we can get a clear picture of Netflix’s viewing patterns over 3.5 years. The categorical and date variables (`chr`, `date`, and `int`) identify each of the 61,892 observations and place them on an exact timeline. The numerical variables (`dbl`) measure total watch hours, while runtime and release dates provide additional context for evaluating viewer engagement over time. Finally, the logical variables (`lgl`) help distinguish between live broadcasts and global releases, making it easier to analyze different segments of Netflix’s content library. **
+> By examining the dataset’s structure, we can get a clear picture of Netflix’s viewing patterns over 3.5 years. The categorical and date variables (`chr`, `date`, and `int`) identify each of the 61,892 observations and place them on an exact timeline. 
+> 
+> The numerical variables (`dbl`) measure total watch hours, while runtime and release dates provide additional context for evaluating viewer engagement over time.
+> 
+> Finally, the logical variables (`lgl`) help distinguish between live broadcasts and global releases, making it easier to analyze different segments of Netflix’s content library.
 
 
 ## Exploratory Data Analysis Pass - Data Summaries, Missing Variables, and Distribution
@@ -149,11 +156,11 @@ NETFLIX_DATA |>
   slice_sample(n = 10)
 ```
 
-> ** The NETFLIX_DATA dataset consists of 61,892 observations across 11 columns, spanning seven semiannual periods from 2023 H1 to 2026 H1.
-
-> ** Missing data in `views` is heavily concentrated within the 2023 H1 period: 18,196 out of the 18,198 missing values. In addition, release_date lacks 35,251 entries and runtime includes 13,085 missing records. 
-
-> ** Conversely, `hours_viewed` is 100% complete with a highly right-skewed distribution, ranging from a median of 1.8 million hours to a maximum of 964.1 million hours. **
+> The NETFLIX_DATA dataset consists of 61,892 observations across 11 columns, spanning seven semiannual periods from 2023 H1 to 2026 H1.
+> 
+> Missing data in `views` is heavily concentrated within the 2023 H1 period: 18,196 out of the 18,198 missing values. In addition, release_date lacks 35,251 entries and runtime includes 13,085 missing records. 
+> 
+> Conversely, `hours_viewed` is 100% complete with a highly right-skewed distribution, ranging from a median of 1.8 million hours to a maximum of 964.1 million hours.
 
 
 ## Exploratory Questions: Inline Values
@@ -168,7 +175,7 @@ q1_end   <- max(NETFLIX_DATA$period_end)
 
 ```
 
-> ** The code shows the date range covered by the dataset lies between `r format(q1_start, "%Y-%m-%d")` and `r format(q1_end, "%Y-%m-%d")`. **
+> The code shows the date range covered by the dataset lies between `r format(q1_start, "%Y-%m-%d")` and `r format(q1_end, "%Y-%m-%d")`.
 
 ### Number of distinct titles
 
@@ -179,7 +186,7 @@ q2_n_titles <- n_distinct(NETFLIX_DATA$title)
 
 ```
 
-> ** The count of distinct strings based on cleaned title fields (strings) equals to `r scales::comma(q2_n_titles)`, connecting to all uniquely named content on the platform.**
+> The count of distinct strings based on cleaned title fields (strings) equals to `r scales::comma(q2_n_titles)`, connecting to all uniquely named content on the platform.
 
 ### Hours watched across the Bridgerton universe
 
@@ -201,7 +208,7 @@ q3_bridgerton_hours <- NETFLIX_DATA |>
 
 ```
 
-> ** The hours of people watched the shows of the Bridgerton universe (includes Seasons 1-4 and Queen Charlotte)  equals to `r scales::comma(q3_bridgerton_hours)` hours. **
+> The hours of people watched the shows of the Bridgerton universe (includes Seasons 1-4 and Queen Charlotte)  equals to `r scales::comma(q3_bridgerton_hours)` hours.
 
 ### Hours watched across the five seasons of Stranger Things
 
@@ -226,7 +233,7 @@ q4_stranger_hours <- NETFLIX_DATA |>
 
 ```
 
-> ** The hours audience watched the Stranger Things Main series (Seasons 1-5, excluding spinoffs) equals to `r scales::comma(q4_stranger_hours)` hours. **
+> The hours audience watched the Stranger Things Main series (Seasons 1-5, excluding spinoffs) equals to `r scales::comma(q4_stranger_hours)` hours.
 
 ### Share of watch time captured by the Top 10 titles of 2026H1
 
@@ -255,7 +262,7 @@ q5_share <- q5_top10_hours / q5_total_hours
 
 ```
 
-> ** The first half of 2026 top 10 share is `r scales::percent(q5_share, accuracy = 0.1)`. This shows the proportion of top 10 titles captured  all platform hours in 2026 H1, excluding the aggregated "Other Shows" category. **
+> The first half of 2026 top 10 share is `r scales::percent(q5_share, accuracy = 0.1)`. This shows the proportion of top 10 titles captured  all platform hours in 2026 H1, excluding the aggregated "Other Shows" category.
 
 ### Fraction of the catalog available globally
 
@@ -282,7 +289,7 @@ q6_by_hours <- q6_known |>
 
 ```
 
-> ** Among catalog records with known availability status, `r scales::percent(q6_by_record_count, accuracy = 0.1)` are globally available, while globally available content accounts for `r scales::percent(q6_by_hours, accuracy = 0.1)` of total watch hours. The difference indicates that globally available content generates a disproportionately higher share of viewing relative to its share of catalog records. **
+> Among catalog records with known availability status, `r scales::percent(q6_by_record_count, accuracy = 0.1)` are globally available, while globally available content accounts for `r scales::percent(q6_by_hours, accuracy = 0.1)` of total watch hours. The difference indicates that globally available content generates a disproportionately higher share of viewing relative to its share of catalog records.
 
 ## Exploratory Questions: Tables
 
@@ -345,7 +352,7 @@ q6_1 |>
 
 ```
 
-> ** Individually, these major releases accounted for between `r scales::percent(min(q6_1$share_of_period), accuracy = 0.1)` and `r scales::percent(max(q6_1$share_of_period), accuracy = 0.1)` of total platform watch hours during their respective periods. **
+> Individually, these major releases accounted for between `r scales::percent(min(q6_1$share_of_period), accuracy = 0.1)` and `r scales::percent(max(q6_1$share_of_period), accuracy = 0.1)` of total platform watch hours during their respective periods.
 
 ### How the catalog has changed in size
 
@@ -384,7 +391,7 @@ q6_2 |>
 
 ```
 
-> ** The number of distinct available titles increased from `r scales::comma(q6_2$title_count[q6_2$period == "2023H2"])` to `r scales::comma(q6_2$title_count[q6_2$period == "2026H1"])`, while the known catalog runtime grew from `r scales::comma(round(q6_2$total_runtime_hours[q6_2$period == "2023H2"]))` hours to `r scales::comma(round(q6_2$total_runtime_hours[q6_2$period == "2026H1"]))` hours. **
+> The number of distinct available titles increased from `r scales::comma(q6_2$title_count[q6_2$period == "2023H2"])` to `r scales::comma(q6_2$title_count[q6_2$period == "2026H1"])`, while the known catalog runtime grew from `r scales::comma(round(q6_2$total_runtime_hours[q6_2$period == "2023H2"]))` hours to `r scales::comma(round(q6_2$total_runtime_hours[q6_2$period == "2026H1"]))` hours.
 
 ### The most consistent performers
 
@@ -446,7 +453,7 @@ q6_3 |>
 
 ```
 
-> ** Top evergreen titles satisfying this rule, for all `r q6_3_period_count` reporting periods, include Pablo Escobar, el patron del mal Season 1, Chiquititas (2013), Stranger Things 4, Suits Seasons 1 and 2, Breaking Bad Seasons 2, 3, and 5, Sam & Cat: Season 1, and Money Heist: Part 1. **
+> Top evergreen titles satisfying this rule, for all `r q6_3_period_count` reporting periods, include Pablo Escobar, el patron del mal Season 1, Chiquititas (2013), Stranger Things 4, Suits Seasons 1 and 2, Breaking Bad Seasons 2, 3, and 5, Sam & Cat: Season 1, and Money Heist: Part 1.
 
 ### Shows versus movies
 
@@ -495,7 +502,13 @@ q6_4 |>
 
 ```
 
-> ** The unknown category of 2023 H1 accounts for `r scales::percent(q6_4$share_of_watch_time[q6_4$period == "2023H1" & q6_4$content_type == "Unknown"], accuracy = 0.1)`. The Show-type content consistently accounts for approximately `r scales::percent(min(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Show"]), accuracy = 0.1)` to `r scales::percent(max(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Show"]), accuracy = 0.1)`. Movies account for approximately `r scales::percent(min(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Movie"]), accuracy = 0.1)` to `r scales::percent(max(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Movie"]), accuracy = 0.1)`, excluding the period 2023 H1.**
+> Content is categorized using a heuristic: when titles have to be classified as 'Shows', one of the two conditions must be satisfied: titles containing “Season” or “Limited Series,” or runtimes exceeding 240 minutes.
+> 
+> Among all titles that are not classified as shows, titles with missing runtimes are labeled Unknown; all others default to Movies.
+> 
+> Because this method relies on naming patterns rather than official metadata, some long films or short series may be misclassified.
+> 
+> The unknown category of 2023 H1 accounts for `r scales::percent(q6_4$share_of_watch_time[q6_4$period == "2023H1" & q6_4$content_type == "Unknown"], accuracy = 0.1)`. The Show-type content consistently accounts for approximately `r scales::percent(min(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Show"]), accuracy = 0.1)` to `r scales::percent(max(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Show"]), accuracy = 0.1)`. Movies account for approximately `r scales::percent(min(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Movie"]), accuracy = 0.1)` to `r scales::percent(max(q6_4$share_of_watch_time[q6_4$period != "2023H1" & q6_4$content_type == "Movie"]), accuracy = 0.1)`, excluding the period 2023 H1.
 
 ### Live events versus pre-taped content
 
@@ -569,31 +582,61 @@ q6_5 |>
 
 ```
 
-> ** Pre-taped content recorded a higher average watch time than live events, and its top performer also substantially exceeded the top live event. The pre-taped average is `r scales::comma(round(q6_5$average_hours[q6_5$content_type == "Pre-Taped"]))`, while live event average is `r scales::comma(round(q6_5$average_hours[q6_5$content_type == "Live Event"]))`. The pre-taped maximum is `r scales::comma(round(q6_5$top_title_hours[q6_5$content_type == "Pre-Taped"]))`, and `r scales::comma(round(q6_5$top_title_hours[q6_5$content_type == "Live Event"]))` is the live event maximum. **
+> Pre-taped content recorded a higher average watch time than live events, and its top performer also substantially exceeded the top live event. The pre-taped average is `r scales::comma(round(q6_5$average_hours[q6_5$content_type == "Pre-Taped"]))`, while live event average is `r scales::comma(round(q6_5$average_hours[q6_5$content_type == "Live Event"]))`. The pre-taped maximum is `r scales::comma(round(q6_5$top_title_hours[q6_5$content_type == "Pre-Taped"]))`, and `r scales::comma(round(q6_5$top_title_hours[q6_5$content_type == "Live Event"]))` is the live event maximum.
 
 ## Strategy Memo
 
-> **[WRITE: the memo.** No more than 750 words, addressed to Netflix leadership, advising on 2027
-> original content strategy. Must cover at least two of: global vs regional availability, TV vs
-> film, big hits vs the long tail, short vs long content, burstiness of viewership, trends over
-> time.
->
-> Every number must arrive through inline code, not typed by hand. Hard-coded values are
-> penalised.
->
-> Supporting calculations go in the chunk below, not in the memo text.**]**
 
 ```{r}
 #| label: memo-calculations
 #| code-fold: true
 
-# Calculations supporting the memo. Keep them here; reference the results
-# in the text above with inline code.
+memo_top1_min <- min(q6_1$share_of_period)
+memo_top1_max <- max(q6_1$share_of_period)
+memo_top10_share <- q5_share
+memo_global_record_share <- q6_by_record_count
+memo_global_hours_share <- q6_by_hours
+memo_titles_2023h2 <- q6_2$title_count[q6_2$period == "2023H2"]
+memo_titles_2026h1 <- q6_2$title_count[q6_2$period == "2026H1"]
+memo_runtime_2023h2 <- q6_2$total_runtime_hours[q6_2$period == "2023H2"]
+memo_runtime_2026h1 <- q6_2$total_runtime_hours[q6_2$period == "2026H1"]
+memo_outside_top10_share <- 1 - memo_top10_share
+
 
 ```
 
+
+### Executive Summary & Core Recommendation
+
+> As part of its programming strategy, Netflix should continue producing high-impact original series and potential mega-blockbusters. Its operating strategy should maintain a precise balance between a broad content catalog and original titles. Historical metrics from the first half of 2023 through the first half of 2026 indicate the role of an extensive catalog to aid ongoing platform engagement.
+
+### Blockbuster Hits vs. The Long Tail Landscape
+
+> Netflix’s historical performance data indicates that no individual hit title accounts for a dominant share of total viewing.
+> 
+> Across all analyzed reporting windows, the top-performing title in any single half-year period accounted for a narrow slice of viewer engagement, ranging from a minimum of **`r scales::percent(memo_top1_min, accuracy = 0.1)`** to a maximum of **`r scales::percent(memo_top1_max, accuracy = 0.1)`** of total platform watch hours. Furthermore, in the first half of 2026, the combined Top 10 standalone titles captured **`r scales::percent(memo_top10_share, accuracy = 0.1)`** of overall watch time.
+> 
+> This provides empirical evidence that most platform viewing is not heavily concentrated within a few top hits; instead, the vast majority of watch time is widely distributed across the broader catalog beyond the Top 10.
+
+### The Global Availability Watch-Hour Share
+
+> An evaluation of international distribution patterns highlights a strong relationship between global content availability and viewer engagement.
+> 
+> Among catalog records with known availability status, globally available properties represent only **`r scales::percent(memo_global_record_share, accuracy = 0.1)`**  of total catalog records, yet they capture **`r scales::percent(memo_global_hours_share, accuracy = 0.1)`** of all watch hours.
+> 
+> Netflix should interpret this data carefully: globally available titles account for a significantly larger share of viewing than their representation in the overall catalog, indicating an association rather than direct causation. This difference suggests that content designed for cross-border distribution may support a higher baseline of platform engagement.
+
+### Portfolio Expansion & Strategic Implications
+
+> The analysis confirms that Netflix has expanded its catalog over the past three years. Between the second half of 2023 and the first half of 2026, the number of distinct cleaned title strings on the platform increased from **`r scales::comma(memo_titles_2023h2)`** to **`r scales::comma(memo_titles_2026h1)`**, while known catalog runtime grew from **`r scales::comma(round(memo_runtime_2023h2))` hours** to **`r scales::comma(round(memo_runtime_2026h1))` hours**.
+> 
+> Rather than treating these figures as a simple mandate to produce more content, leadership should build on this momentum by improving portfolio efficiency. The future content pipeline should prioritize:
+
+*   **Global reach:** Greenlighting projects with broad cross-cultural appeal and securing worldwide distribution rights to capture the **`r scales::percent(memo_global_hours_share, accuracy = 0.1)`** watch-hour share associated with globally available content.
+*   **Durable long-tail assets:** Investing in cost-effective genres that expand the catalog segments responsible for more than **`r scales::percent(memo_outside_top10_share, accuracy = 0.1)`**, proving that watch time is widely distributed across the broader catalog beyond the Top 10.
+
+*   **Selective marquee development:** Maintaining disciplined investment in high-priority original titles, while avoiding excessive reliance on individual titles.
+
 ::: {.callout-note title="AI Usage Statement" collapse="true"}
-**[WRITE: your AI usage statement.** One paragraph describing honestly how you used generative AI
-on this mini-project. Recall the course policy: AI may not be used to write or edit non-code text.
-Omitting this section is an automatic 25% penalty.**]**
-:::
+
+> Throughout the mini-project, generative AI was used for data acquisition, function creation, and debugging. The writer entered task instructions and asked generative AI to identify the necessary variables and provide the functions needed to create the statistical variables for analysis. The writer also requested appropriate responses to assist with debugging console entries and Git commits.Another use of generative AI in the project was file organization and formatting. Generative AI organized the main QMD file by aligning the blocks for written responses and R code blocks in Quarto Markdown. Text responses that required inline R code equations to display inline R outputs were typed in place of raw numerics. All responses under the code blocks that analyze the functions, calculations, table outputs, and Strategic Memo were typed manually. Generative AI was used only to identify areas requiring grammatical, punctuation, and indentation corrections. However, understanding the identified phrases and revising the sentences were solely the writer’s responsibility.
